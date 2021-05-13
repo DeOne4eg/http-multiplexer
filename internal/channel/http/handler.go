@@ -1,8 +1,12 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
+	"sync"
 )
 
 const (
@@ -17,6 +21,18 @@ type Handler struct {}
 
 type input struct {
 	URL []string `json:"urls"`
+}
+
+type urlResponse struct {
+	URL string `json:"url"`
+	StatusCode int `json:"status_code"`
+	Response string `json:"response"`
+	Headers map[string]string `json:"headers"`
+}
+
+type successResponse struct {
+	OK bool `json:"ok"`
+	Result []urlResponse `json:"result"`
 }
 
 func NewHandler() *Handler {
@@ -48,7 +64,7 @@ func (h *Handler) handlePing(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 	i := input{}
 	if err := json.NewDecoder(r.Body).Decode(&i); err != nil {
-		NewErrorResponse(w, http.StatusInternalServerError, "Error parsing JSON")
+		NewErrorResponse(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
@@ -61,5 +77,58 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _ = w.Write([]byte("ok"))
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan urlResponse, 4)
+
+	defer cancel()
+
+	for _, u := range i.URL {
+		_, err := url.ParseRequestURI(u)
+		if err != nil {
+			NewErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Invalid URL: %s", u))
+			return
+		}
+
+		wg.Add(1)
+		go func(ctx context.Context) {
+			defer wg.Done()
+
+			select {
+			case <-ctx.Done():
+				fmt.Println("Goroutine stopped")
+				return
+			default:
+				ch <- urlResponse{
+					URL:        "https://vk.com",
+					StatusCode: 200,
+					Response:   "test",
+					Headers:    nil,
+				}
+			}
+		}(ctx)
+	}
+
+	go func() {
+		defer close(ch)
+		wg.Wait()
+	}()
+
+	var res []urlResponse
+	for ur := range ch {
+		if ur.StatusCode != 200 {
+			NewErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error handling URL: %v", ur.URL))
+			return
+		}
+
+		res = append(res, ur)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(&successResponse{
+		OK:   true,
+		Result: res,
+	}); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
