@@ -13,12 +13,12 @@ import (
 
 func Run() {
 	cfg := config.NewConfig()
-	srv := http.NewServer(cfg, handlers.Init(cfg))
+
+	handlers := http.NewHandler()
+	srv := http.NewServer(cfg, handlers.Init())
 	go func() {
 		if err := srv.Run(); err != nil {
-			log.Errorf("Error occurred while running http server: %v", err.Error())
-		} else {
-			log.Info("ok")
+			log.Fatalf("Error occurred while running http server: %v", err.Error())
 		}
 	}()
 

@@ -1,21 +1,31 @@
 package http
 
 import (
-	"fmt"
+	"context"
 	"github.com/DeOne4eg/http-multiplexer/config"
 	"net/http"
+	"strconv"
 )
 
 type Server struct {
-	httpServer *http.ServeMux
+	httpServer *http.Server
 }
 
-func NewServer(handler *http.Handler) *Server {
+func NewServer(cfg *config.Config, handler http.Handler) *Server {
 	return &Server{
-		httpServer: http.NewServeMux(),
+		httpServer: &http.Server{
+			Addr:           ":" + strconv.Itoa(cfg.HTTP.Port),
+			Handler:        handler,
+			ReadTimeout:    cfg.HTTP.ReadTimeout,
+			WriteTimeout:   cfg.HTTP.WriteTimeout,
+		},
 	}
 }
 
-func (s *Server) Run(cfg *config.Config) error {
-	return http.ListenAndServe(fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port), s.httpServer)
+func (s *Server) Run() error {
+	return s.httpServer.ListenAndServe()
+}
+
+func (s *Server) Stop(ctx context.Context) error {
+	return s.httpServer.Shutdown(ctx)
 }

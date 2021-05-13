@@ -24,7 +24,7 @@ func NewConfig() *Config {
 	return &Config{
 		HTTP: HTTPConfig{
 			Host: getStringEnv("HTTP_HOST", "localhost"),
-			Port: getIntEnv("HTTP_PORT", 80),
+			Port: getIntEnv("HTTP_PORT", 8080),
 		},
 	}
 }
