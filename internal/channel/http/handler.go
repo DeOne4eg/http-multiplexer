@@ -76,6 +76,7 @@ func (h *Handler) handlePing(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("pong"))
 }
 
+//handleUrls is main function for handle received URLs.
 func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 	i := input{}
 	if err := json.NewDecoder(r.Body).Decode(&i); err != nil {
@@ -83,6 +84,7 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// input data validation in switch case
 	switch {
 	case len(i.URL) == 0:
 		NewErrorResponse(w, http.StatusBadRequest, "Empty URL list")
@@ -93,7 +95,12 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var wg sync.WaitGroup
+
+	// create context with cancel for stop all goroutines
 	ctx, cancel := context.WithCancel(r.Context())
+
+	// main channel for getting handle result of URL
+	// 4 - limit goroutines
 	ch := make(chan urlResponse, 4)
 
 	defer cancel()
@@ -111,9 +118,12 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 
 			select {
 			case <-ctx.Done():
+				// exit the goroutine
 				return
 			default:
+				// create client with timeout 1 second
 				client := http.Client{Timeout: 1 * time.Second}
+				// do GET request
 				resp, err := client.Get(url)
 				if err != nil {
 					ch <- urlResponse{
@@ -125,14 +135,17 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+				// get body
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
 					log.Printf("Error read body; %v", err)
 				}
 
+				// get headers from response
 				headers := make(map[string]string)
 				getHeaders(resp.Header, headers)
 
+				// write result
 				ch <- urlResponse{
 					URL:        url,
 					StatusCode: resp.StatusCode,
@@ -144,17 +157,21 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
+		// close channel
 		defer close(ch)
+		// wait the end of all goroutines
 		wg.Wait()
 	}()
 
 	var res []urlResponse
 	for ur := range ch {
+		// if server return error then throw errorResponse with status code 500
 		if ur.StatusCode < 200 || ur.StatusCode >= 300 {
 			NewErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error handling URL: %v", ur.URL))
 			return
 		}
 
+		// write result in urlResponse slice
 		res = append(res, ur)
 	}
 
