@@ -17,9 +17,9 @@
 + сервис должен поддерживать 'graceful shutdown'
 
 ## Solution notes
-
 + 🔱 clean architecture
 + 📖 only standard Go components are used
++ ✅ tests
 
 ## HOWTO
 + run with `make run`
