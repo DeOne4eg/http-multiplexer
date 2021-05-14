@@ -40,7 +40,7 @@ type urlResponse struct {
 
 // successResponse returns on successful result
 type successResponse struct {
-	OK bool `json:"ok"`
+	OK bool              `json:"ok"`
 	Result []urlResponse `json:"result"`
 }
 
@@ -134,6 +134,9 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 					}
 					return
 				}
+				defer func() {
+					_ = resp.Body.Close()
+				}()
 
 				// get body
 				body, err := ioutil.ReadAll(resp.Body)
