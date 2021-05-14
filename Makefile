@@ -1,14 +1,19 @@
+.SILENT:
 .PHONY: build
 build:
 	go build -o .build/ ./cmd/multiplexer
 
-.PHONE: run
+.PHONY: run
 run:
 	go run ./cmd/multiplexer.go
 
-.PHONE: test
+.PHONY: test
 test:
-	go test -v ./...
+	go test -coverprofile=cover.out -v ./...
+
+.PHONY: test.coverage
+test.coverage:
+	go tool cover -func=cover.out
 
 .PHONY: lint
 lint:
