@@ -11,27 +11,30 @@ import (
 	"time"
 )
 
+// Run launches the application
 func Run() {
+	// create config
 	cfg := config.NewConfig()
 
+	// create handlers
 	handlers := http.NewHandler()
+
+	// create HTTP server
 	srv := http.NewServer(cfg, handlers.Init())
-	go func() {
-		if err := srv.Run(); err != nil {
-			log.Fatalf("Error occurred while running http server: %v", err.Error())
-		}
-	}()
 
+	// run HTTP server
+	go func() { _ = srv.Run() }()
+
+	// catch signals for quit from application
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-
+	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	const timeout = 5 * time.Second
-
-	ctx, shutdown := context.WithTimeout(context.Background(), timeout)
+	// graceful shutdown with limit 5 seconds
+	ctx, shutdown := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer shutdown()
 
+	// if server stopped within 5 seconds then ok else throw error
 	if err := srv.Stop(ctx); err != nil {
 		log.Printf("Failed to stop server: %v", err)
 	} else {
