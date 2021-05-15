@@ -35,7 +35,7 @@ func Run() {
 	<-quit
 
 	// graceful shutdown with limit 5 seconds
-	ctx, shutdown := context.WithTimeout(context.Background(), 5 * time.Second)
+	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdown()
 
 	// if server stopped within 5 seconds then ok else throw error

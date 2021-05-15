@@ -16,10 +16,10 @@ type Server struct {
 func NewServer(cfg *config.Config, handler http.Handler) *Server {
 	return &Server{
 		httpServer: &http.Server{
-			Addr:           ":" + strconv.Itoa(cfg.HTTP.Port),
-			Handler:        handler,
-			ReadTimeout:    cfg.HTTP.ReadTimeout,
-			WriteTimeout:   cfg.HTTP.WriteTimeout,
+			Addr:         ":" + strconv.Itoa(cfg.HTTP.Port),
+			Handler:      handler,
+			ReadTimeout:  cfg.HTTP.ReadTimeout,
+			WriteTimeout: cfg.HTTP.WriteTimeout,
 		},
 	}
 }

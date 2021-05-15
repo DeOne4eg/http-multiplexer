@@ -23,7 +23,7 @@ var (
 )
 
 // Handler is a struct for handle request
-type Handler struct {}
+type Handler struct{}
 
 // input describe JSON struct of HTTP request body
 type input struct {
@@ -32,15 +32,15 @@ type input struct {
 
 // urlResponse contains information about result of request to received URLs
 type urlResponse struct {
-	URL string `json:"url"`
-	StatusCode int `json:"status_code"`
-	Response string `json:"response"`
-	Headers map[string]string `json:"headers"`
+	URL        string            `json:"url"`
+	StatusCode int               `json:"status_code"`
+	Response   string            `json:"response"`
+	Headers    map[string]string `json:"headers"`
 }
 
 // successResponse returns on successful result
 type successResponse struct {
-	OK bool              `json:"ok"`
+	OK     bool          `json:"ok"`
 	Result []urlResponse `json:"result"`
 }
 
@@ -181,7 +181,7 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(&successResponse{
-		OK:   true,
+		OK:     true,
 		Result: res,
 	}); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -189,7 +189,7 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 }
 
 // getHeaders receive HTTP headers list and convert it to map
-func getHeaders(in http.Header, out map[string]string)  {
+func getHeaders(in http.Header, out map[string]string) {
 	for k, v := range in {
 		out[k] = v[0]
 	}
