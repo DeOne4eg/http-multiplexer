@@ -1,5 +1,5 @@
 ![Github CI/CD](https://img.shields.io/github/workflow/status/DeOne4eg/http-multiplexer/Go)
-![Go Report](https://goreportcard.com/badge/github.com/DeOne4eg/http-multiplexer)
+![Go Report](https://goreportcard.com/badge/github.com/DeOne4eg/http-multiplexer?kill_cache=1)
 ![Repository Top Language](https://img.shields.io/github/languages/top/DeOne4eg/http-multiplexer)
 ![Scrutinizer Code Quality](https://img.shields.io/scrutinizer/quality/g/DeOne4eg/http-multiplexer/master)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/DeOne4eg/http-multiplexer)
