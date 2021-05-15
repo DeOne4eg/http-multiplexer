@@ -15,6 +15,7 @@ import (
 func Run() {
 	// create config
 	cfg := config.NewConfig()
+	log.Printf("Config: %+v", *cfg)
 
 	// create handlers
 	handlers := http.NewHandler()
@@ -23,7 +24,10 @@ func Run() {
 	srv := http.NewServer(cfg, handlers.Init())
 
 	// run HTTP server
-	go func() { _ = srv.Run() }()
+	go func() {
+		log.Printf("Running HTTP server on :%d", cfg.HTTP.Port)
+		_ = srv.Run()
+	}()
 
 	// catch signals for quit from application
 	quit := make(chan os.Signal, 1)

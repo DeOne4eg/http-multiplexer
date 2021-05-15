@@ -23,8 +23,10 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		HTTP: HTTPConfig{
-			Host: getStringEnv("HTTP_HOST", "localhost"),
-			Port: getIntEnv("HTTP_PORT", 8080),
+			Host:         getStringEnv("HTTP_HOST", "localhost"),
+			Port:         getIntEnv("HTTP_PORT", 8080),
+			ReadTimeout:  getTimeDurationEnv("HTTP_READ_TIMEOUT", 10*time.Second),
+			WriteTimeout: getTimeDurationEnv("HTTP_WRITE_TIMEOUT", 10*time.Second),
 		},
 	}
 }

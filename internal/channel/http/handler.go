@@ -61,6 +61,7 @@ func (h *Handler) handle(w http.ResponseWriter, r *http.Request) {
 	limiter <- struct{}{}
 	defer func() { <-limiter }()
 
+	log.Printf("%s request: %s", r.Method, r.URL)
 	w.Header().Set("Content-Type", "application/json")
 
 	switch r.Method {
