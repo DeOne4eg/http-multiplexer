@@ -60,16 +60,6 @@ func TestHandleUrls(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		//t.Run(tc.name, func(t *testing.T) {
-		//	if tc.expect != nil {
-		//		tc.expect()
-		//	}
-		//
-		//	if tc.assert != nil {
-		//		tc.assert()
-		//	}
-		//})
-
 		res, err := http.Post(ts.URL, "application/json", strings.NewReader(tc.payload))
 		if err != nil {
 			t.Error(err)

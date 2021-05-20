@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// Run launches the application
+// Run launches the application.
 func Run() {
 	// create config
 	cfg := config.NewConfig()

@@ -22,15 +22,15 @@ var (
 	limiter = make(chan struct{}, maxConn)
 )
 
-// Handler is a struct for handle request
+// Handler is a struct for handle request.
 type Handler struct{}
 
-// input describe JSON struct of HTTP request body
+// input describe JSON struct of HTTP request body.
 type input struct {
 	URL []string `json:"urls"`
 }
 
-// urlResponse contains information about result of request to received URLs
+// urlResponse contains information about result of request to received URLs.
 type urlResponse struct {
 	URL        string            `json:"url"`
 	StatusCode int               `json:"status_code"`
@@ -38,18 +38,18 @@ type urlResponse struct {
 	Headers    map[string]string `json:"headers"`
 }
 
-// successResponse returns on successful result
+// successResponse returns on successful result.
 type successResponse struct {
 	OK     bool          `json:"ok"`
 	Result []urlResponse `json:"result"`
 }
 
-// NewHandler create instance of Handler
+// NewHandler create instance of Handler.
 func NewHandler() *Handler {
 	return &Handler{}
 }
 
-// Init calls the handler function and return http.Handler
+// Init calls the handler function and return http.Handler.
 func (h *Handler) Init() http.Handler {
 	return http.HandlerFunc(h.handle)
 }
@@ -65,14 +65,14 @@ func (h *Handler) handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	switch r.Method {
-	case "POST":
+	case http.MethodPost:
 		h.handleUrls(w, r)
 	default:
 		h.handlePing(w, r)
 	}
 }
 
-// handlePing simple ping pong handler
+// handlePing simple ping pong handler.
 func (h *Handler) handlePing(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("pong"))
 }
@@ -119,24 +119,27 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 
 			select {
 			case <-ctx.Done():
-				// exit the goroutine
 				return
 			default:
-				// create client with timeout 1 second
-				client := http.Client{Timeout: 1 * time.Second}
-				// do GET request
-				resp, err := client.Get(url)
+				req, err := http.NewRequest("GET", url, nil)
 				if err != nil {
-					ch <- urlResponse{
-						URL:        url,
-						StatusCode: 0,
-						Response:   "",
-						Headers:    nil,
-					}
+					ch <- urlResponse{URL: url}
+					log.Fatalf("Error creating request: %v", err)
+				}
+				req = req.WithContext(ctx)
+
+				// create HTTP client with timeout 1 second
+				client := http.Client{Timeout: 1 * time.Second}
+				resp, err := client.Do(req)
+				if err != nil {
+					ch <- urlResponse{URL: url}
 					return
 				}
 				defer func() {
-					_ = resp.Body.Close()
+					err = resp.Body.Close()
+					if err != nil {
+						log.Printf("Error close body response: %v", err.Error())
+					}
 				}()
 
 				// get body
@@ -161,16 +164,14 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		// close channel
 		defer close(ch)
-		// wait the end of all goroutines
 		wg.Wait()
 	}()
 
 	var res []urlResponse
 	for ur := range ch {
 		// if server return error then throw errorResponse with status code 500
-		if ur.StatusCode < 200 || ur.StatusCode >= 300 {
+		if ur.StatusCode < http.StatusOK || ur.StatusCode >= http.StatusMultipleChoices {
 			NewErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error handling URL: %v", ur.URL))
 			return
 		}
@@ -180,10 +181,12 @@ func (h *Handler) handleUrls(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(&successResponse{
+	err := json.NewEncoder(w).Encode(&successResponse{
 		OK:     true,
 		Result: res,
-	}); err != nil {
+	})
+
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
